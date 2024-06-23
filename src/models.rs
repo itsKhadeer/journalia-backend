@@ -1,319 +1,125 @@
 use super::schema::*;
-use chrono::{NaiveDate, NaiveDateTime};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
+
+// Custom SQL types
+#[derive(diesel_derive_enum::DbEnum, Debug, Serialize, Clone, PartialEq, Copy)]
+#[DieselTypePath = "crate::schema::sql_types::UserRole"]
+pub enum UserRole {
+    Admin,
+    Moderator,
+    Writer,
+    User,
+}
 
 #[derive(diesel_derive_enum::DbEnum, Debug, Serialize, Clone, PartialEq, Copy)]
-#[DieselTypePath = "crate::schema::sql_types::BlockCategory"]
-pub enum BlockCategory {
-    Building,
-    Defender,
-    Mine,
+#[DieselTypePath = "crate::schema::sql_types::VoteValue"]
+pub enum VoteValue {
+    Up,
+    Down,
 }
 
-#[derive(diesel_derive_enum::DbEnum, Debug, Serialize, Clone, PartialEq, Copy, Deserialize)]
-#[DieselTypePath = "crate::schema::sql_types::ItemCategory"]
-pub enum ItemCategory {
-    Attacker,
-    Emp,
-    Block,
-}
-
+// Articles table
 #[derive(Queryable, Serialize, Clone, Debug)]
-pub struct EmpType {
-    pub id: i32,
-    pub att_type: String,
-    pub attack_radius: i32,
-    pub attack_damage: i32,
-    pub cost: i32,
-    pub name: String,
-    pub level: i32,
-}
-
-#[derive(Queryable, Serialize)]
-pub struct AttackType {
-    pub id: i32,
-    pub att_type: String,
-    pub attack_radius: i32,
-    pub attack_damage: i32,
+pub struct Article {
+    pub article_id: i32,
+    pub topic_id: i32,
+    pub writer_id: i32,
+    pub title: String,
+    pub image_url: Option<String>,
+    pub content: String,
+    pub created_at: chrono::NaiveDateTime,
+    pub updated_at: chrono::NaiveDateTime,
 }
 
 #[derive(Insertable)]
-#[diesel(table_name = attack_type)]
-pub struct NewAttackType<'a> {
-    pub att_type: &'a str,
-    pub attack_radius: &'a i32,
-    pub attack_damage: &'a i32,
+#[diesel(table_name = articles)]
+pub struct NewArticle<'a> {
+    pub topic_id: &'a i32,
+    pub writer_id: &'a i32,
+    pub title: &'a str,
+    pub image_url: Option<&'a str>,
+    pub content: &'a str,
+    pub created_at: &'a chrono::NaiveDateTime,
+    pub updated_at: &'a chrono::NaiveDateTime,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct NewAttackerPath {
-    pub y_coord: i32,
-    pub x_coord: i32,
-    pub is_emp: bool,
-    pub emp_type: Option<i32>,
-    pub emp_time: Option<i32>,
-}
-
-#[derive(Queryable, Clone, Debug, Serialize)]
-pub struct BuildingType {
-    pub id: i32,
-    pub name: String,
-    pub width: i32,
-    pub height: i32,
-    pub capacity: i32,
-    pub level: i32,
-    pub cost: i32,
-    pub hp: i32,
-}
-
-#[derive(Insertable)]
-#[diesel(table_name = building_type)]
-pub struct NewBuildingType<'a> {
-    pub name: &'a str,
-    pub width: &'a i32,
-    pub height: &'a i32,
-    pub capacity: &'a i32,
-    pub level: &'a i32,
-    pub cost: &'a i32,
-}
-
-#[derive(Queryable, Debug, Serialize, Deserialize)]
-pub struct Artifact {
-    pub map_space_id: i32,
-    pub count: i32,
-}
-
-#[derive(Deserialize, Insertable)]
-#[diesel(table_name = artifact)]
-pub struct NewArtifact {
-    pub map_space_id: i32,
-    pub count: i32,
-}
-
-#[derive(Queryable, Debug, Serialize, Deserialize)]
-pub struct AvailableBlocks {
-    pub block_type_id: Option<i32>,
+// Comments table
+#[derive(Queryable, Serialize, Clone, Debug)]
+pub struct Comment {
+    pub comment_id: i32,
+    pub article_id: i32,
     pub user_id: i32,
-    pub attacker_type_id: Option<i32>,
-    pub emp_type_id: Option<i32>,
-    pub category: ItemCategory,
-    pub id: i32,
-}
-
-#[derive(Deserialize, Insertable)]
-#[diesel(table_name = available_blocks)]
-pub struct NewAvailableBlocks {
-    pub block_type_id: Option<i32>,
-    pub user_id: i32,
-    pub attacker_type_id: Option<i32>,
-    pub emp_type_id: Option<i32>,
-    pub category: ItemCategory,
-}
-
-#[derive(Queryable, Serialize, Deserialize, Debug)]
-pub struct Game {
-    pub id: i32,
-    pub attack_id: i32,
-    pub defend_id: i32,
-    pub map_layout_id: i32,
-    pub attack_score: i32,
-    pub defend_score: i32,
-    pub emps_used: i32,
-    pub damage_done: i32,
-    pub is_game_over: bool,
-    pub artifacts_collected: i32,
-    pub date: NaiveDate,
+    pub content: String,
+    pub created_at: chrono::NaiveDateTime,
+    pub updated_at: chrono::NaiveDateTime,
 }
 
 #[derive(Insertable)]
-#[diesel(table_name = game)]
-pub struct NewGame<'a> {
-    pub attack_id: &'a i32,
-    pub defend_id: &'a i32,
-    pub map_layout_id: &'a i32,
-    pub attack_score: &'a i32, //attacker's trophy change
-    pub defend_score: &'a i32, //defender's trophy change
-    pub artifacts_collected: &'a i32,
-    pub emps_used: &'a i32,
-    pub damage_done: &'a i32,
-    pub is_game_over: &'a bool,
-    pub date: &'a NaiveDate,
+#[diesel(table_name = comments)]
+pub struct NewComment<'a> {
+    pub article_id: &'a i32,
+    pub user_id: &'a i32,
+    pub content: &'a str,
+    pub created_at: &'a chrono::NaiveDateTime,
+    pub updated_at: &'a chrono::NaiveDateTime,
 }
 
-#[derive(Queryable, Serialize)]
-pub struct LevelsFixture {
-    pub id: i32,
-    pub start_date: NaiveDateTime,
-    pub end_date: NaiveDateTime,
-    pub no_of_bombs: i32,
-    pub rating_factor: f32,
-    pub no_of_attackers: i32,
+// Topics table
+#[derive(Queryable, Serialize, Clone, Debug)]
+pub struct Topic {
+    pub topic_id: i32,
+    pub topic_name: String,
 }
 
 #[derive(Insertable)]
-#[diesel(table_name = levels_fixture)]
-pub struct NewLevelFixture<'a> {
-    pub start_date: &'a NaiveDateTime,
-    pub end_date: &'a NaiveDateTime,
-    pub no_of_bombs: &'a i32,
-    pub rating_factor: &'a f32,
-    pub no_of_attackers: &'a i32,
+#[diesel(table_name = topics)]
+pub struct NewTopic<'a> {
+    pub topic_name: &'a str,
 }
 
-#[derive(Queryable, Serialize)]
-pub struct LevelConstraints {
-    pub level_id: i32,
-    pub no_of_blocks: i32,
-    pub block_id: i32,
-}
-
-#[derive(Insertable)]
-#[diesel(table_name = level_constraints)]
-pub struct NewLevelConstraint<'a> {
-    pub level_id: &'a i32,
-    pub no_of_blocks: &'a i32,
-    pub block_id: &'a i32,
-}
-
-#[derive(Clone, Queryable, Serialize)]
-pub struct MapLayout {
-    pub id: i32,
-    pub player: i32,
-    pub level_id: i32,
-    pub is_valid: bool,
-}
-
-#[derive(Insertable)]
-#[diesel(table_name = map_layout)]
-pub struct NewMapLayout<'a> {
-    pub player: &'a i32,
-    pub level_id: &'a i32,
-    pub is_valid: &'a bool,
-}
-
-#[derive(Queryable, Debug, Serialize, Deserialize, Clone)]
-pub struct MapSpaces {
-    pub id: i32,
-    pub map_id: i32,
-    pub x_coordinate: i32,
-    pub y_coordinate: i32,
-    pub block_type_id: i32,
-}
-
-#[derive(Deserialize, Insertable)]
-#[diesel(table_name = map_spaces)]
-pub struct NewMapSpaces {
-    pub map_id: i32,
-    pub x_coordinate: i32,
-    pub y_coordinate: i32,
-    pub block_type_id: i32,
-}
-
-#[derive(Insertable, PartialEq)]
-#[diesel(table_name = shortest_path)]
-pub struct NewShortestPath {
-    pub base_id: i32,
-    pub source_x: i32,
-    pub source_y: i32,
-    pub dest_x: i32,
-    pub dest_y: i32,
-    pub next_hop_x: i32,
-    pub next_hop_y: i32,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, Queryable)]
+// Users table
+#[derive(Queryable, Serialize, Clone, Debug)]
 pub struct User {
-    pub id: i32,
-    pub name: String,
+    pub user_id: i32,
+    pub user_name: String,
     pub email: String,
-    pub username: String,
-    pub is_pragyan: bool,
-    pub attacks_won: i32,
-    pub defenses_won: i32,
-    pub trophies: i32,
-    pub avatar_id: i32,
-    pub artifacts: i32,
-}
-
-#[derive(Insertable, Debug)]
-#[diesel(table_name = user)]
-pub struct NewUser<'a> {
-    pub name: &'a str,
-    pub email: &'a str,
-    pub username: &'a str,
-    pub is_pragyan: &'a bool,
-    pub attacks_won: &'a i32,
-    pub defenses_won: &'a i32,
-    pub avatar_id: &'a i32,
-    pub artifacts: &'a i32,
-}
-
-#[derive(Queryable, Deserialize, Serialize)]
-pub struct SimulationLog {
-    pub game_id: i32,
-    pub log_text: String,
+    pub phone: String,
+    pub access_token: Option<String>,
+    pub role: UserRole,
 }
 
 #[derive(Insertable)]
-#[diesel(table_name = simulation_log)]
-pub struct NewSimulationLog<'a> {
-    pub game_id: &'a i32,
-    pub log_text: &'a str,
+#[diesel(table_name = users)]
+pub struct NewUser<'a> {
+    pub user_name: &'a str,
+    pub email: &'a str,
+    pub phone: &'a str,
+    pub access_token: Option<&'a str>,
+    pub role: UserRole,
 }
 
-#[derive(AsChangeset, Debug, Deserialize)]
-#[diesel(table_name = user)]
-pub struct UpdateUser {
-    pub username: Option<String>,
-    pub avatar_id: Option<i32>,
+// Votes table
+// UpdateUser table
+#[derive(AsChangeset)]
+#[table_name = "users"]
+pub struct UpdateUser<'a> {
+    pub user_name: Option<&'a str>,
+    pub email: Option<&'a str>,
+    pub phone: Option<&'a str>,
+    pub role: Option<UserRole>,
+}
+#[derive(Queryable, Serialize, Clone, Debug)]
+pub struct Vote {
+    pub vote_id: i32,
+    pub article_id: i32,
+    pub user_id: i32,
+    pub vote_type: VoteValue,
 }
 
-#[derive(Queryable, Clone, Debug, Serialize)]
-pub struct MineType {
-    pub id: i32,
-    pub radius: i32,
-    pub damage: i32,
-    pub level: i32,
-    pub cost: i32,
-    pub name: String,
-}
-
-#[derive(Queryable, Clone, Debug, Serialize)]
-pub struct DefenderType {
-    pub id: i32,
-    pub speed: i32,
-    pub damage: i32,
-    pub radius: i32,
-    pub level: i32,
-    pub cost: i32,
-    pub name: String,
-}
-
-#[derive(Queryable, Clone, Debug, Serialize)]
-pub struct BlockType {
-    pub id: i32,
-    pub defender_type: Option<i32>,
-    pub mine_type: Option<i32>,
-    pub category: BlockCategory,
-    pub building_type: i32,
-}
-
-#[derive(Queryable, Clone, Debug, Serialize)]
-#[diesel(table_name = block_type)]
-pub struct NewBlockType<'a> {
-    pub defender_type: &'a Option<i32>,
-    pub mine_type: &'a Option<i32>,
-    pub category: &'a BlockCategory,
-    pub building_type: &'a Option<i32>,
-}
-
-#[derive(Queryable, Clone, Debug, Serialize)]
-pub struct AttackerType {
-    pub id: i32,
-    pub max_health: i32,
-    pub speed: i32,
-    pub amt_of_emps: i32,
-    pub level: i32,
-    pub cost: i32,
-    pub name: String,
+#[derive(Insertable)]
+#[diesel(table_name = votes)]
+pub struct NewVote<'a> {
+    pub article_id: &'a i32,
+    pub user_id: &'a i32,
+    pub vote_type: VoteValue,
 }
