@@ -1,0 +1,9 @@
+services:
+  server:
+    ports:
+      - ${SERVER_PORT}:8000
+    volumes:
+      - ./:/usr/src/journalia-backend
+      - /usr/src/journalia-backend/target
+      # Having ./target mounted causes deps to be compiled again on every hot reload
+      # if language server runs cargo check on save

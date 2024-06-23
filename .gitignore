@@ -1,0 +1,6 @@
+logs
+target
+.env
+.idea
+dump.rdb
+.vscode
